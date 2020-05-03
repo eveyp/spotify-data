@@ -1,0 +1,79 @@
+library(tidyverse)
+library(httr)
+
+source(api_keys.R)
+
+# makes api request to last.fm for scrobble data
+get_scrobble_page = function(lastfm_api_key, user = "ip4589", page = NULL, limit = 200) {
+  # url prefix for last.fm api
+  base_url = "http://ws.audioscrobbler.com/2.0/"
+  # build the query and submit to the api, limit means number of scrobbles to return (max: 200)
+  response = GET(base_url, query = list(method = "user.getrecenttracks", user = user, api_key = lastfm_api_key, format = "json", limit = limit, page = page))
+  return(response)
+}
+
+# parses the json response and returns the metadata in a list and the scrobbles in a messy data frame
+parse_scrobbles_response = function(response) {
+  # convert the json response to text
+  text = content(response, as = "text")
+  # convert the json text to R objects (a list of a list of 2 lists)
+  parsed <- jsonlite::fromJSON(text, simplifyVector = TRUE)
+  # get rid of one extra level of lists and return a list of 2 lists
+  return(parsed[[1]])
+}
+
+# extracts the scrobbles from the parsed response and cleans up the data
+parse_scrobbled_tracks = function(parsed_response, time_zone = "US/Pacific") {
+  # the scrobbles are in the second list of the parsed response so just grab that
+  raw_tracks = parsed[[2]]
+  # clean up the scrobbles
+  tracks = raw_tracks %>% 
+    # convert to a tibble
+    as_tibble() %>% 
+    # pull fields out of nested data frames
+    mutate(artist_name = artist$`#text`,
+           artists_mbid = artist$mbid,
+           album_name = album$`#text`,
+           album_mbid = album$mbid,
+           # convert the text utc timestamp to numeric
+           timestamp_utc = as.numeric(date$uts),
+           # convert the utc time to R datetime
+           datetime_utc = lubridate::as_datetime(timestamp_utc),
+           # set the timezone to pacfic
+           timestamp = lubridate::with_tz(datetime_utc, tzone = "US/Pacific")) %>% 
+    # only want the cleaned names, mbids, urls, and timestamps
+    select(artist_name, album_name, track_name = name, artists_mbid, album_mbid, track_mbid = mbid, url, timestamp)
+  return(tracks)
+}
+
+# downloads the entire scrobble history
+get_all_scrobbles = function(lastfm_api_key, user = "ip4589") {
+  # grab the first page of scrobbles from the api and parse
+  first_page_response = get_scrobble_page(lastfm_api_key, user = user) %>% 
+    parse_scrobbles_response()
+  # find the total number of pages of scrobbles (contained in the metadata of the response)
+  number_of_pages = first_page_response %>%
+    # the metadata is the first list in the parsed response so grab it
+    magrittr::extract2(1) %>% 
+    # pull out the total pages field
+    magrittr::use_series("totalPages") %>%
+    # convert the total pages value from character to numeric
+    as.numeric()
+  # parse the tracks from the first page since we already have it
+  first_page_tracks = parse_scrobbled_tracks(first_page_response)
+  # loop over the number of pages and grab each page, parse it, and clean the scrobbles
+  remaining_tracks = map_dfr(2:number_of_pages, function(page) {
+    # grab the next page of scrobbles
+    get_scrobble_page(lastfm_api_key, user = user, page = page) %>% 
+      # parse the response
+      parse_scrobbles_response() %>% 
+      # clean up the scrobbles
+      parse_scrobbled_tracks()
+  })
+  # once we've got all the scrobbles combine the first page with the rest of the pages
+  all_tracks = bind_rows(first_page_tracks, remaining_tracks)
+  return(all_tracks)
+}
+  
+all_scrobbled_tracks = get_all_scrobbles(lastfm_api_key)
+
