@@ -77,14 +77,14 @@ get_all_scrobbles = function(lastfm_api_key, user = "ip4589") {
   
   # loop over the number of pages and grab each page, parse it, and clean the scrobbles
   remaining_tracks = map_dfr(2:number_of_pages, function(page) {
+    # update the progress bar
+    pb$tick()
     # grab the next page of scrobbles
     get_scrobble_page(lastfm_api_key, user = user, page = page) %>% 
       # parse the response
       parse_scrobbles_response() %>% 
       # clean up the scrobbles
       parse_scrobbled_tracks()
-    # update the progress bar
-    pb$tick()
   })
   # once we've got all the scrobbles combine the first page with the rest of the pages
   all_tracks = bind_rows(first_page_tracks, remaining_tracks)
