@@ -4,12 +4,6 @@ library(furrr)
 
 all_scrobbles = read_csv("scrobbles_as_of_2020-05-05.csv")
 
-test_scrobbles = head(all_scrobbles)
-
-url = "https://www.last.fm/music/Blood+Orange/_/Benzo"
-
-page = html(url)
-
 page %>% 
   html_node(".resource-external-link--spotify") %>% 
   html_attr("href") %>% 
@@ -43,11 +37,3 @@ save_ids = function(id_set) {
   name_stub = deparse(substitute(id_set))
   write_csv(id_set, file.path(paste0(name_stub, ".csv")))
 }
-
-spotify_ids_1_500 = pscrape_spotify_ids(unique(all_scrobbles$url)[1:250])
-spotify_ids_251_500 = pscrape_spotify_ids(unique(all_scrobbles$url)[251:500])
-spotify_ids_501_750 = pscrape_spotify_ids(unique(all_scrobbles$url)[501:750])
-spotify_ids_751_1000 = pscrape_spotify_ids(unique(all_scrobbles$url)[751:1000])
-spotify_ids_1001_1250 = pscrape_spotify_ids(unique(all_scrobbles$url)[1001:1250])
-spotify_ids_1251_1500 = pscrape_spotify_ids(unique(all_scrobbles$url)[1251:1500])
-spotify_ids_1501_1750 = pscrape_spotify_ids(unique(all_scrobbles$url)[1501:1750])
