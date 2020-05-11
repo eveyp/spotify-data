@@ -93,6 +93,11 @@ get_all_scrobbles = function(lastfm_api_key, user = "ip4589") {
   
 all_scrobbled_tracks = get_all_scrobbles(lastfm_api_key)
 
+spotify_ids = read_csv("spotify_ids.csv")
+
+all_scrobbled_tracks = all_scrobbled_tracks %>% 
+  left_join(spotify_ids, by = "url")
+
 date_now = lubridate::now() %>% 
   lubridate::floor_date("day") %>% 
   as.character()
@@ -102,4 +107,5 @@ csv_prefix = "scrobbles_as_of_.csv"
 csv_name = filenamer::set_fdate(csv_prefix, date_now)
 
 write_csv(all_scrobbled_tracks, csv_name)
+
 
