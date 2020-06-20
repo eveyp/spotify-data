@@ -4,3 +4,4 @@
 .Ruserdata
 *.Rproj
 api_keys.R
+.httr-oauth
