@@ -65,7 +65,7 @@ scrobbles_with_ids = scrobbles %>%
   select(-url)
 
 # connect to the scrobbles database
-db = dbConnect(RSQLite::SQLite(), "./scrobbles.sqlite")
+source("connect_to_db.R")
 
 copy_to(db, scrobbles_with_ids, "scrobbles", temporary = FALSE, indexes = list("timestamp", "artist", "album", "track", "spotify_id"), overwrite = TRUE)
 

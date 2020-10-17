@@ -94,7 +94,7 @@ get_all_scrobbles = function(lastfm_api_key, user = "ip4589") {
   
 all_scrobbled_tracks = get_all_scrobbles(lastfm_api_key)
 
-db = dbConnect(RSQLite::SQLite(), "./scrobbles.sqlite")
+source("connect_to_db.R")
 
 copy_to(db, all_scrobbled_tracks, "scrobbles", temporary = FALSE, indexes = list("timestamp", "artist_name", "album_name", "track_name"))
 

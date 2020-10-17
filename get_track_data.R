@@ -25,7 +25,7 @@ get_all_track_features = function(ids, authorization, chunk_size = 50) {
 }
 
 # connect to the scrobbles database
-db = dbConnect(RSQLite::SQLite(), "./scrobbles.sqlite")
+source("connect_to_db.R")
 
 track_data = get_all_tracks(spotify_ids$spotify_id, authorization = spotify_token) %>% 
   select(spotify_id = id, explicit, popularity, release_date = album.release_date, isrc = external_ids.isrc)

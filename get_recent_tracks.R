@@ -4,9 +4,10 @@ library(RSQLite)
 
 source("api_keys.R")
 
+source("connect_to_db.R")
+
 spotify_auth_code = get_spotify_authorization_code(client_id = spotify_client_id, client_secret = spotify_client_secret, scope = "user-read-recently-played")
 
-db = dbConnect(RSQLite::SQLite(), "./scrobbles.sqlite")
 
 query = paste("SELECT MAX(timestamp) FROM api_tracks_played")
 
