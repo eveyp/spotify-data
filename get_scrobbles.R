@@ -1,6 +1,7 @@
 library(tidyverse)
 library(httr)
 library(progress)
+library(RSQLite)
 
 source("api_keys.R")
 
@@ -40,11 +41,11 @@ parse_scrobbled_tracks = function(parsed_response, time_zone = "US/Pacific") {
            album_name = album$`#text`,
            album_mbid = album$mbid,
            # convert the text utc timestamp to numeric
-           timestamp_utc = as.numeric(date$uts),
+           timestamp = as.numeric(date$uts),
            # convert the utc time to R datetime
-           datetime_utc = lubridate::as_datetime(timestamp_utc),
-           # set the timezone to pacfic
-           timestamp = lubridate::with_tz(datetime_utc, tzone = "US/Pacific")) %>% 
+           timestamp = lubridate::as_datetime(timestamp),
+           # store the timestamp as text
+           timestamp = as.character(timestamp)) %>% 
     # only want the cleaned names, mbids, urls, and timestamps
     select(artist_name, album_name, track_name = name, artists_mbid, album_mbid, track_mbid = mbid, url, timestamp)
   return(tracks)
@@ -93,19 +94,10 @@ get_all_scrobbles = function(lastfm_api_key, user = "ip4589") {
   
 all_scrobbled_tracks = get_all_scrobbles(lastfm_api_key)
 
-spotify_ids = read_csv("spotify_ids.csv")
+db = dbConnect(RSQLite::SQLite(), "./scrobbles.sqlite")
 
-all_scrobbled_tracks = all_scrobbled_tracks %>% 
-  left_join(spotify_ids, by = "url")
+copy_to(db, all_scrobbled_tracks, "scrobbles", temporary = FALSE, indexes = list("timestamp", "artist_name", "album_name", "track_name"))
 
-date_now = lubridate::now() %>% 
-  lubridate::floor_date("day") %>% 
-  as.character()
-
-csv_prefix = "scrobbles_as_of_.csv"
-
-csv_name = filenamer::set_fdate(csv_prefix, date_now)
-
-write_csv(all_scrobbled_tracks, csv_name)
+dbDisconnect(db)
 
 
