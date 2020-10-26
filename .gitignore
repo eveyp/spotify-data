@@ -7,3 +7,4 @@ api_keys.R
 .httr-oauth
 *.sqlite
 connect_to_db.R
+log.txt
