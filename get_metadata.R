@@ -84,7 +84,8 @@ final_spotify_ids = unique_tracks_with_ids %>%
 
 # merge the ids on to the actual scrobble data
 scrobbles_with_ids = scrobbles %>% 
-  left_join(final_spotify_ids, by = c("artist_name" = "artist" , "album_name" = "album", "track_name" = "track", "url")) 
+  left_join(final_spotify_ids, by = c("artist_name" = "artist" , "album_name" = "album", "track_name" = "track", "url")) %>% 
+  mutate(timestamp_spotify = lastfm_ts_to_spotify(timestamp))
 
 # write the scrobble data now with spotify ids to the database
 copy_to(db, scrobbles_with_ids, "scrobbles", temporary = FALSE, indexes = list("timestamp", "artist_name", "album_name", "track_name", "spotify_id"), overwrite = TRUE)

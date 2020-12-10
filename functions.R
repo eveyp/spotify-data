@@ -189,3 +189,19 @@ get_all_track_features = function(ids, authorization, chunk_size = 50) {
   # iterate over the groups and hit the api for the set of tracks in each group
   map_dfr(id_chunks, ~ get_track_audio_features(.x, authorization = authorization))
 }
+
+# convert last.fm timestamps (milliseconds since 1970-01-01 00:00:00.000, ie. unix timestamps) to spotify timestamps (format: YYYY-MM-DDTHH-MM-SS.MMMZ)
+lastfm_ts_to_spotify = function(raw_timestamp) {
+  # add 0.1 to the timestamp to avoid rounding issues and divide by 1000 b/c R interprets this as seconds since orgin, not milliseconds
+#  timestamp_decimal = (as.numeric(raw_timestamp) + 0.1) / 1000
+  # convert to a date-time object, time zone is GMT, time is seconds since origin (1970-01-01 00:00:00)
+  timestamp_posix = as.POSIXct(as.numeric(raw_timestamp), tz = "GMT", origin = "1970-01-01")
+  # convert the date-time object to a string
+  timestamp_chr = as.character(timestamp_posix)
+  # replace the space between the date and time with a "T" as spotify does
+  timestamp_chr = str_replace(timestamp_chr, " ", "T")
+  # put a "Z" at the end as spotify does
+  timestamp_spotify = paste0(timestamp_chr, ".000Z")
+  # and we're done!
+  return(timestamp_spotify)
+}
