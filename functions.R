@@ -10,11 +10,11 @@ library(dbplyr)
 #### downloading scrobbles from last.fm
 
 # makes api request to last.fm for scrobble data
-get_scrobble_page = function(lastfm_api_key, user = "ip4589", page = NULL, limit = 200) {
+get_scrobble_page = function(lastfm_api_key, user = "ip4589", page = NULL, limit = 200, from = NULL) {
   # url prefix for last.fm api
   base_url = "http://ws.audioscrobbler.com/2.0/"
   # build the query and submit to the api, limit means number of scrobbles to return (max: 200)
-  response = RETRY("GET", base_url, query = list(method = "user.getrecenttracks", user = user, api_key = lastfm_api_key, format = "json", limit = limit, page = page))
+  response = RETRY("GET", base_url, query = list(method = "user.getrecenttracks", user = user, api_key = lastfm_api_key, format = "json", limit = limit, page = page, from = from))
   # check to see if we got a good response, if not stop the program
   if (response$status_code != 200) {
     stop(paste("bad response status code:", response$status_code))
@@ -53,9 +53,9 @@ parse_scrobbled_tracks = function(parsed_response, time_zone = "US/Pacific") {
 }
 
 # downloads the entire scrobble history
-get_all_scrobbles = function(lastfm_api_key, user = "ip4589") {
+get_all_scrobbles = function(lastfm_api_key, user = "ip4589", from = NULL) {
   # grab the first page of scrobbles from the api and parse
-  first_page_response = get_scrobble_page(lastfm_api_key, user = user, page = 1) %>% 
+  first_page_response = get_scrobble_page(lastfm_api_key, user = user, page = 1, from = from) %>% 
     parse_scrobbles_response()
   
   # find the total number of pages of scrobbles (contained in the metadata of the response)
@@ -90,6 +90,9 @@ get_all_scrobbles = function(lastfm_api_key, user = "ip4589") {
   })
   # once we've got all the scrobbles combine the first page with the rest of the pages
   all_tracks = bind_rows(first_page_tracks, remaining_tracks)
+  if (!is.null(from)) {
+    all_tracks = filter(all_tracks, as.numeric(timestamp) > from)
+  }
   return(all_tracks)
 }
 
