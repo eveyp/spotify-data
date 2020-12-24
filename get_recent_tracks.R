@@ -14,7 +14,8 @@ query = paste("SELECT MAX(timestamp) FROM api_tracks_played")
 latest_timestamp = unlist(dbGetQuery(db, query))
 
 get_recent_tracks = function(authorization = spotify_auth_code) {
-  response = get_my_recently_played(limit = 50, authorization = authorization, after = latest_timestamp)
+  response = NULL
+  try(response <- get_my_recently_played(limit = 50, authorization = authorization, after = latest_timestamp))
   if (is.data.frame(response)) {
     recent_tracks = response %>% 
       select(timestamp = played_at, spotify_id = track.id, track_name = track.name)
@@ -26,7 +27,7 @@ get_recent_tracks = function(authorization = spotify_auth_code) {
   
   later::later(get_recent_tracks, 60)
   
-  print(latest_timestamp)
+  message(latest_timestamp)
 }
 
 get_recent_tracks()
