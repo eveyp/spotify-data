@@ -27,7 +27,7 @@ get_recent_tracks = function(authorization = spotify_auth_code) {
   
   later::later(get_recent_tracks, 300)
   
-  message(latest_timestamp)
+  message(paste0(lubridate::now("UTC"), ": last recorded timestamp: ", latest_timestamp))
 }
 
 get_recent_tracks()
