@@ -25,7 +25,7 @@ get_recent_tracks = function(authorization = spotify_auth_code) {
     latest_timestamp <<- max(recent_tracks$timestamp)
   }
   
-  later::later(get_recent_tracks, 60)
+  later::later(get_recent_tracks, 300)
   
   message(latest_timestamp)
 }
