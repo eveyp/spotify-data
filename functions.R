@@ -10,11 +10,11 @@ library(dbplyr)
 #### downloading scrobbles from last.fm
 
 # makes api request to last.fm for scrobble data
-get_scrobble_page = function(lastfm_api_key, user = "ip4589", page = NULL, limit = 200, from = NULL) {
+get_scrobble_page = function(lastfm_api_key, user = "ip4589", page = NULL, limit = 200, from = NULL, to = NULL) {
   # url prefix for last.fm api
   base_url = "http://ws.audioscrobbler.com/2.0/"
   # build the query and submit to the api, limit means number of scrobbles to return (max: 200)
-  response = RETRY("GET", base_url, query = list(method = "user.getrecenttracks", user = user, api_key = lastfm_api_key, format = "json", limit = limit, page = page, from = from))
+  response = RETRY("GET", base_url, query = list(method = "user.getrecenttracks", user = user, api_key = lastfm_api_key, format = "json", limit = limit, page = page, from = from, to = to))
   # check to see if we got a good response, if not stop the program
   if (response$status_code != 200) {
     stop(paste("bad response status code:", response$status_code))
@@ -34,7 +34,7 @@ parse_scrobbles_response = function(response) {
 }
 
 # extracts the scrobbles from the parsed response and cleans up the data
-parse_scrobbled_tracks = function(parsed_response, time_zone = "US/Pacific") {
+parse_scrobbled_tracks = function(parsed_response) {
   # the scrobbles are in the second list of the parsed response so just grab that
   raw_tracks = parsed_response[[2]]
   # clean up the scrobbles
@@ -53,9 +53,9 @@ parse_scrobbled_tracks = function(parsed_response, time_zone = "US/Pacific") {
 }
 
 # downloads the entire scrobble history
-get_all_scrobbles = function(lastfm_api_key, user = "ip4589", from = NULL) {
+get_all_scrobbles = function(lastfm_api_key, user = "ip4589", from = NULL, to = NULL) {
   # grab the first page of scrobbles from the api and parse
-  first_page_response = get_scrobble_page(lastfm_api_key, user = user, page = 1, from = from) %>% 
+  first_page_response = get_scrobble_page(lastfm_api_key, user = user, page = 1, from = from, to = to) %>% 
     parse_scrobbles_response()
   
   # find the total number of pages of scrobbles (contained in the metadata of the response)
@@ -69,30 +69,39 @@ get_all_scrobbles = function(lastfm_api_key, user = "ip4589", from = NULL) {
   # parse the tracks from the first page since we already have it
   first_page_tracks = parse_scrobbled_tracks(first_page_response)
   
-  # intialize the progress bar
-  pb = progress_bar$new(
-    total = number_of_pages,
-    format = "  page :current of :total [:bar] :percent")
-  
-  # show the progress bar at 1
-  pb$tick(1)
-  
-  # loop over the number of pages and grab each page, parse it, and clean the scrobbles
-  remaining_tracks = map_dfr(2:number_of_pages, function(page) {
-    # update the progress bar
-    pb$tick()
-    # grab the next page of scrobbles
-    get_scrobble_page(lastfm_api_key, user = user, page = page) %>% 
-      # parse the response
-      parse_scrobbles_response() %>% 
-      # clean up the scrobbles
-      parse_scrobbled_tracks()
-  })
-  # once we've got all the scrobbles combine the first page with the rest of the pages
-  all_tracks = bind_rows(first_page_tracks, remaining_tracks)
-  if (!is.null(from)) {
-    all_tracks = filter(all_tracks, as.numeric(timestamp) > from)
+  if (number_of_pages > 1) {
+    # intialize the progress bar
+    pb = progress_bar$new(
+      total = number_of_pages,
+      format = "  page :current of :total [:bar] :percent")
+    
+    # show the progress bar at 1
+    pb$tick(1)
+    
+    # loop over the number of pages and grab each page, parse it, and clean the scrobbles
+    remaining_tracks = map_dfr(2:number_of_pages, function(page) {
+      # update the progress bar
+      pb$tick()
+      # grab the next page of scrobbles
+      get_scrobble_page(lastfm_api_key, user = user, page = page) %>% 
+        # parse the response
+        parse_scrobbles_response() %>% 
+        # clean up the scrobbles
+        parse_scrobbled_tracks()
+    })
+    # once we've got all the scrobbles combine the first page with the rest of the pages
+    all_tracks = bind_rows(first_page_tracks, remaining_tracks)
+  } else {
+    all_tracks = first_page_tracks
   }
+  
+  if (!is.null(from)) {
+    all_tracks = filter(all_tracks, as.numeric(timestamp) > as.numeric(from))
+  }
+  if (!is.null(to)) {
+    all_tracks = filter(all_tracks, as.numeric(timestamp) < as.numeric(to))
+  }
+  
   return(all_tracks)
 }
 
