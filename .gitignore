@@ -11,3 +11,4 @@ log.txt
 api_keys.yaml
 .vscode
 .cache
+*.code-workspace
