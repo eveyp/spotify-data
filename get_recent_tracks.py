@@ -1,4 +1,4 @@
-from spotipy.oauth2 import SpotifyOAuth
+from helpers import get_spotify_api, get_spotify_api_keys
 import spotipy
 import sqlite3
 import yaml
@@ -16,12 +16,12 @@ logging.basicConfig(handlers=handler, level="INFO",
 with open('api_keys.yaml') as file:
     keys = yaml.full_load(file)
 
+spotify_client_secret, spotify_client_id = get_spotify_api_keys(
+    "api_keys.yaml")
+
 # connect to the spotify api
 try:
-    sp = spotipy.Spotify(auth_manager=SpotifyOAuth(scope='user-read-recently-played',
-                                                   client_secret=keys['spotify']['client secret'],
-                                                   client_id=keys['spotify']['client id'],
-                                                   redirect_uri='http://localhost:1410/'))
+    sp = get_spotify_api(spotify_client_secret, spotify_client_id)
 except Exception as e:
     logging.exception("Could not connect to Spotify.")
 
@@ -50,7 +50,7 @@ def parse_play_record(record):
     track_name = record['track']['name']
 
     # return a tuple that can be passed to the database
-    return((timestamp, spotify_id, track_name))
+    return timestamp, spotify_id, track_name
 
 
 # combine all of the new records into a list
