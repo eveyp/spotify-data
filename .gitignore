@@ -13,3 +13,4 @@ api_keys.yaml
 .cache
 *.code-workspace
 __pycache__
+.python-version
