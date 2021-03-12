@@ -9,30 +9,33 @@ def get_spotify_api_keys(key_file):
     with open(key_file) as file:
         keys = yaml.full_load(file)
 
-    keys = {
-        'client_secret': keys['spotify']['client secret'],
-        'client_id': keys['spotify']['client id']
-    }
+    client_secret = keys['spotify']['client secret']
+    client_id = keys['spotify']['client id']
 
-    return keys
+    return client_secret, client_id
 
 
 def get_spotify_api(
-        keys=None,
+        client_secret=None,
+        client_id=None,
         settings_file=None,
         scope='user-read-recently-played',
         redirect_uri='http://localhost:1410/'):
 
-    if keys is None and settings_file is None:
-        raise Exception
+    if (client_secret is None or client_id is None) and settings_file is None:
+        raise ValueError("Must specify a client secret, client id pair or a settings file.")
 
-    if keys is None:
-        keys = get_spotify_api_keys(settings_file)
+    if (client_secret is not None or client_id is not None) and settings_file is not None:
+        raise ValueError(
+            "Specify either a client secret, client id pair or a settings file, not both.")
+
+    if settings_file is not None:
+        client_secret, client_id = get_spotify_api_keys(settings_file)
 
     sp = Spotify(auth_manager=SpotifyOAuth(
         scope=scope,
-        client_secret=keys['client_secret'],
-        client_id=keys['client_id'],
+        client_secret=client_secret,
+        client_id=client_id,
         redirect_uri=redirect_uri)
     )
 
@@ -50,7 +53,10 @@ def get_db_path(file):
 
 def get_db_session(settings_file=None, db_path=None):
     if settings_file is None and db_path is None:
-        raise Exception
+        raise ValueError("Must specify a settings file or database path.")
+
+    if settings_file is not None and db_path is not None:
+        raise ValueError("Specify a settings file or database path, not both.")
 
     if db_path is None:
         db_path = get_db_path(settings_file)
