@@ -31,11 +31,9 @@ class Album(Base):
     release_date = Column(String)
     type = Column(String)
     label = Column(String)
-    genre = Column(String)
 
     artists = relationship('Artist', back_populates="albums")
     tracks = relationship('Track', back_populates="album")
-
 
 
 class Artist(Base):
@@ -45,8 +43,6 @@ class Artist(Base):
     popularity = Column(Integer)
     image_url = Column(String)
 
-#     genres = relationship("Genre", secondary='artist_genre',
-#                          back_populates="artists")
     albums = relationship("Album", back_populates="artists")
     tracks = relationship("Track", back_populates="lead_artist")
 
