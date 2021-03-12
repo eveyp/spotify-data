@@ -11,6 +11,8 @@ spotipy = "*"
 [dev-packages]
 ipykernel = "*"
 pandas = "*"
+autopep8 = "*"
+pylint = "*"
 
 [requires]
 python_version = "3.9"
