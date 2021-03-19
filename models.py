@@ -1,7 +1,6 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, Table
 from sqlalchemy.orm import relation, relationship, backref
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.sql.schema import PassiveDefault
 from sqlalchemy.sql.sqltypes import Float
 
 Base = declarative_base() 
