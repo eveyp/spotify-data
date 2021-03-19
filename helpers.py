@@ -44,7 +44,7 @@ def get_spotify_api(
 
 def get_db_path(file):
     with open(file) as file:
-        keys = yaml.full_load(file)
+        keys = yaml.safe_load(file)
 
     db_path = keys['db location']
 
