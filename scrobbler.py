@@ -1,4 +1,5 @@
 import argparse
+import inflect
 from helpers import get_db_session, get_spotify_api
 from models import Album, Artist, Scrobble, Track
 
@@ -211,13 +212,21 @@ def main():
                         )
     args = parser.parse_args()
 
+    p = inflect.engine()
+
     sc = Scrobbler(args.settings_file)
 
     new_plays = sc.get_new_plays()
 
+    scrobbled_tracks = 0
     if new_plays is not None:
         for play in new_plays:
             sc.process_scrobble(play)
+
+        scrobbled_tracks = len(new_plays)
+
+    print(
+        f"Scrobbled {scrobbled_tracks} {p.plural('track', scrobbled_tracks)}.")
 
 
 if __name__ == "__main__":
