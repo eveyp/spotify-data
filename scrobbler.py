@@ -4,18 +4,18 @@ from models import Album, Artist, Scrobble, Track
 
 class Scrobbler():
     def __init__(self, settings_file):
-        self._db = get_db_session(settings_file=settings_file)
+        self.db = get_db_session(settings_file=settings_file)
 
-        self._sp = get_spotify_api(settings_file=settings_file)
+        self.sp = get_spotify_api(settings_file=settings_file)
 
         return
 
     def add_album(self, album_id=None, album_data=None):
         if album_id is None and album_data is None:
             raise Exception
-        
+
         if album_data is None:
-            album_data = self._sp.album(album_id)
+            album_data = self.sp.album(album_id)
 
         if album_id is None:
             album_id = album_data['id']
@@ -36,16 +36,16 @@ class Scrobbler():
             type=album_data.get('type')
         )
 
-        self._db.add(album)
+        self.db.add(album)
 
         return
 
     def add_artist(self, artist_id=None, artist_data=None):
         if artist_id is None and artist_data is None:
-            raise Exception 
+            raise Exception
 
         if artist_data is None:
-            artist_data = self._sp.artist(artist_id)
+            artist_data = self.sp.artist(artist_id)
 
         if artist_id is None:
             artist_id = artist_data['id']
@@ -62,7 +62,7 @@ class Scrobbler():
             image_url=image_url,
         )
 
-        self._db.add(artist)
+        self.db.add(artist)
 
         return
 
@@ -71,10 +71,10 @@ class Scrobbler():
             raise Exception
 
         if track_data is None:
-            track_data = self._sp.track(track_id)
+            track_data = self.sp.track(track_id)
 
         if track_features is None:
-            track_features = self._sp.audio_features(track_id)[0]
+            track_features = self.sp.audio_features(track_id)[0]
 
         if track_id is None:
             track_id = track_data['id']
@@ -101,26 +101,26 @@ class Scrobbler():
             time_signature=track_features.get('time_signature')
         )
 
-        self._db.add(track)
+        self.db.add(track)
 
         return
 
     def get_latest_timestamp(self):
-        return self._db.query(Scrobble.timestamp).order_by(Scrobble.timestamp.desc()).first()
+        return self.db.query(Scrobble.timestamp).order_by(Scrobble.timestamp.desc()).first()
 
-    def parse_play(play_data):
+    def parse_play(self, play_data):
         return {
             'track_id': play_data['track']['id'],
             'timestamp': play_data['played_at'],
             'track_name': play_data['track']['name'],
-            'lead_artist_id': play_data['track']['artist'][0]['id'],
+            'lead_artist_id': play_data['track']['artists'][0]['id'],
             'album_id': play_data['track']['album']['id']
         }
 
     def get_new_plays(self):
         latest_timestamp = self.get_latest_timestamp()
 
-        result = self._sp.current_user_recently_played(after=latest_timestamp)
+        result = self.sp.current_user_recently_played(after=latest_timestamp)
 
         raw_plays = result.get('items')
 
@@ -136,14 +136,14 @@ class Scrobbler():
             track_name=play_data.get('track_name')
         )
 
-        self._db.add(scrobble)
+        self.db.add(scrobble)
 
         return
 
     def process_scrobble(self, play_data):
         # check if a scrobble with that timestamp already exists
         scrobble = (
-            self._db.query(Scrobble)
+            self.db.query(Scrobble)
             .filter(Scrobble.timestamp == play_data['timestamp'])
             .one_or_none()
         )
@@ -154,7 +154,7 @@ class Scrobbler():
 
         # check if the track exists
         track = (
-            self._db.query(Track)
+            self.db.query(Track)
             .filter(Track.spotify_id == play_data['track_id'])
             .one_or_none()
         )
@@ -163,24 +163,24 @@ class Scrobbler():
         if track is not None:
             self.add_scrobble(play_data)
 
-            self._db.commit()
+            self.db.commit()
 
             return
 
         # check if the artist exists
         artist = (
-            self._db.query(Artist)
-            .filter(Artist.spotify_id == play_data['artist_id'])
+            self.db.query(Artist)
+            .filter(Artist.spotify_id == play_data['lead_artist_id'])
             .one_or_none()
         )
 
         # if the artist doesn't exist, add them
         if artist is None:
-            self.add_artist(artist_id=play_data['artist_id'])
+            self.add_artist(artist_id=play_data['lead_artist_id'])
 
         # check if the album exists
         album = (
-            self._db.query(Album)
+            self.db.query(Album)
             .filter(Album.spotify_id == play_data['album_id']).
             one_or_none()
         )
@@ -195,7 +195,7 @@ class Scrobbler():
         # add the scrobble
         self.add_scrobble(play_data)
 
-        self._db.commit()
+        self.db.commit()
 
         return
 
