@@ -1,3 +1,4 @@
+import argparse
 from helpers import get_db_session, get_spotify_api
 from models import Album, Artist, Scrobble, Track
 
@@ -200,11 +201,24 @@ class Scrobbler():
         return
 
 
-if __name__ == "__main__":
-    sc = Scrobbler('settings.yaml')
+def main():
+    parser = argparse.ArgumentParser(description="spotify scrobbler")
+    parser.add_argument('-s', '--settings_file',
+                        metavar='SETTINGS_FILE',
+                        type=str,
+                        help="the settings file in yaml format with database location and spotify credentials",
+                        default="settings.yaml"
+                        )
+    args = parser.parse_args()
+
+    sc = Scrobbler(args.settings_file)
 
     new_plays = sc.get_new_plays()
 
     if new_plays is not None:
         for play in new_plays:
             sc.process_scrobble(play)
+
+
+if __name__ == "__main__":
+    main()
