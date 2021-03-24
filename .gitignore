@@ -8,7 +8,9 @@ api_keys.R
 *.sqlite
 connect_to_db.R
 log.txt
-api_keys.yaml
+*.yaml
 .vscode
 .cache
 *.code-workspace
+__pycache__
+.python-version
