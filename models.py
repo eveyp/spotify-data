@@ -3,7 +3,7 @@ from sqlalchemy.orm import relation, relationship, backref
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql.sqltypes import Float
 
-Base = declarative_base() 
+Base = declarative_base()
 
 # artist_album = Table(
 #     "artists_albums",
@@ -12,12 +12,20 @@ Base = declarative_base()
 #     Column("album_id", String, ForeignKey("albums.spotify_id"))
 # )
 
-# artist_genre = Table(
-#     "artists_genres",
-#     Base.metadata,
-#     Column("artist_id", String, ForeignKey("artists.spotify_id")),
-#     Column("genre", String, ForeignKey("genres.name"))
-# )
+
+artists_genres = Table(
+    "artists_genres",
+    Base.metadata,
+    Column("artist_id", String, ForeignKey("artists.spotify_id")),
+    Column("genre", String, ForeignKey("genres.name"))
+)
+
+albums_genres = Table(
+    "albums_genres",
+    Base.metadata,
+    Column("album_id", String, ForeignKey("albums.spotify_id")),
+    Column("genre", String, ForeignKey("genres.name"))
+)
 
 
 class Album(Base):
@@ -33,6 +41,8 @@ class Album(Base):
 
     artists = relationship('Artist', back_populates="albums")
     tracks = relationship('Track', back_populates="album")
+    genres = relationship(
+        'Genre', secondary='albums_genres', back_populates="albums")
 
 
 class Artist(Base):
@@ -42,16 +52,21 @@ class Artist(Base):
     popularity = Column(Integer)
     image_url = Column(String)
 
-    albums = relationship("Album", back_populates="artists")
-    tracks = relationship("Track", back_populates="lead_artist")
+    albums = relationship('Album', back_populates="artists")
+    tracks = relationship('Track', back_populates='lead_artist')
+    genres = relationship(
+        'Genre', secondary='artists_genres', back_populates='artists')
 
 
-# class Genre(Base):
-#     __tablename__ = "genres"
-#     name = Column(String, primary_key=True)
+class Genre(Base):
+    __tablename__ = "genres"
+    id = Column(Integer, primary_key=True)
+    name = Column(String)
 
-    #artists = relationship(
-     #   "Artist", secondary="artist_genre", back_populates="genres")
+    artists = relationship(
+        'Artist', secondary='artists_genres', back_populates='genres')
+    albums = relationship(
+        'Album', secondary='albums_genres', back_populates='genres')
 
 
 class Scrobble(Base):
