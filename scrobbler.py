@@ -1,8 +1,15 @@
 import argparse
 import inflect
 from helpers import get_db_session, get_spotify_api
-from models import Album, Artist, Scrobble, Track
+from models import Album, Artist, Scrobble, Track, Genre
 
+
+def create_genre(genre_name):
+    genre = Genre(
+        name=genre_name
+    )
+
+    return genre
 
 class Scrobbler():
     def __init__(self, settings_file):
@@ -26,7 +33,8 @@ class Scrobbler():
             cover_url = album_data['images'][0]['url']
         except IndexError:
             cover_url = None
-
+        
+        # initialize the album object
         album = Album(
             spotify_id=album_id,
             name=album_data['name'],
@@ -38,13 +46,32 @@ class Scrobbler():
             type=album_data.get('type')
         )
 
+        # add the genres to the album object
+        album.genres = self.process_genres(album_data.get('genres'))
+
+        # add the album to the database
         self.db.add(album)
 
         return
+    
+    def process_genres(self, genres):
+        if genres is not None:
+            return [self.get_genre(genre) for genre in genres]
+        else:
+            return []            
+    
+    def get_genre(self, genre_name):
+        genre = self.db.query(Genre).filter(Genre.name == genre_name).one_or_none()
+
+        if genre is None:
+            genre = create_genre(genre_name)
+        
+        return genre    
+
 
     def add_artist(self, artist_id=None, artist_data=None):
         if artist_id is None and artist_data is None:
-            raise Exception
+            raise TypeError("Either an artist id or artist data must be specified.")
 
         if artist_data is None:
             artist_data = self.sp.artist(artist_id)
@@ -57,15 +84,23 @@ class Scrobbler():
         except IndexError:
             image_url = None
 
+        # initialize the artist object
         artist = Artist(
             spotify_id=artist_id,
             name=artist_data['name'],
             popularity=artist_data.get('popularity'),
-            image_url=image_url,
+            image_url=image_url
         )
 
-        self.db.add(artist)
+        # gather list of artist's genre objects or empty list if no genres
+        genres = self.process_genres(artist_data.get('genres'))
 
+        # add the genres to the artist object
+        artist.genres = genres
+
+        # add the artist to the database
+        self.db.add(artist)
+        
         return
 
     def add_track(self, track_id=None, track_data=None, track_features=None):
