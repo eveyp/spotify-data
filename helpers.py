@@ -46,7 +46,7 @@ def get_db_path(file):
     with open(file) as file:
         keys = yaml.safe_load(file)
 
-    db_path = keys['db location']
+    db_path = keys['db string']
 
     return db_path
 
@@ -61,7 +61,7 @@ def get_db_session(settings_file=None, db_path=None):
     if db_path is None:
         db_path = get_db_path(settings_file)
 
-    engine = create_engine(f"sqlite:///{db_path}")
+    engine = create_engine(db_path)
     Session = sessionmaker(bind=engine)
     session = Session()
 
