@@ -132,17 +132,6 @@ class Scrobbler():
             return None
 
     def add_scrobble(self, play_data):
-        scrobble = Scrobble(
-            timestamp=play_data['timestamp'],
-            spotify_id=play_data['track_id'],
-            track_name=play_data.get('track_name')
-        )
-
-        self.db.add(scrobble)
-
-        return
-
-    def process_scrobble(self, play_data):
         # check if a scrobble with that timestamp already exists
         scrobble = (
             self.db.query(Scrobble)
@@ -153,7 +142,22 @@ class Scrobbler():
         # if the scrobble does exist we don't have to do anything and just return
         if scrobble is not None:
             return
+        
+        # otherwise build the scrobble object
+        scrobble = Scrobble(
+            timestamp=play_data['timestamp'],
+            spotify_id=play_data['track_id'],
+            track_name=play_data.get('track_name')
+        )
 
+        # add it to the database
+        self.db.add(scrobble)
+        # commit the change
+        self.db.commit()
+
+        return
+
+    def process_scrobble(self, play_data):
         # check if the track exists
         track = (
             self.db.query(Track)
@@ -194,9 +198,6 @@ class Scrobbler():
         # add the track
         self.add_track(track_id=play_data['track_id'])
 
-        # add the scrobble
-        self.add_scrobble(play_data)
-
         self.db.commit()
 
         return
@@ -221,6 +222,7 @@ def main():
     scrobbled_tracks = 0
     if new_plays is not None:
         for play in new_plays:
+            sc.add_scrobble(play)
             sc.process_scrobble(play)
 
         scrobbled_tracks = len(new_plays)
