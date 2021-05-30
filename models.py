@@ -1,4 +1,3 @@
-from typing import ByteString
 from sqlalchemy import Column, Integer, String, ForeignKey, Table
 from sqlalchemy.orm import relation, relationship, backref
 from sqlalchemy.ext.declarative import declarative_base
