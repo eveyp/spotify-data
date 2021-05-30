@@ -1,3 +1,4 @@
+from typing import ByteString
 from sqlalchemy import Column, Integer, String, ForeignKey, Table
 from sqlalchemy.orm import relation, relationship, backref
 from sqlalchemy.ext.declarative import declarative_base
@@ -10,13 +11,6 @@ Base = declarative_base()
 #     Base.metadata,
 #     Column("artist_id", String, ForeignKey("artists.spotify_id")),
 #     Column("album_id", String, ForeignKey("albums.spotify_id"))
-# )
-
-# artist_genre = Table(
-#     "artists_genres",
-#     Base.metadata,
-#     Column("artist_id", String, ForeignKey("artists.spotify_id")),
-#     Column("genre", String, ForeignKey("genres.name"))
 # )
 
 
@@ -52,6 +46,11 @@ class Artist(Base):
 
     #artists = relationship(
      #   "Artist", secondary="artist_genre", back_populates="genres")
+
+class Label(Base):
+    __tablename__ = "labels"
+    id = Column(Integer, primary_key=True)
+    label = Column(String, nullable=False)
 
 
 class Scrobble(Base):
