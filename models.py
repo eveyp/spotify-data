@@ -13,6 +13,13 @@ Base = declarative_base()
 #     Column("album_id", String, ForeignKey("albums.spotify_id"))
 # )
 
+artists_labels = Table(
+    "artists_labels",
+    Base.metadata,
+    Column("artist_id", String, ForeignKey("albums.lead_artist_id")),
+    Column("label", String, ForeignKey("albums.label"))
+)
+
 
 class Album(Base):
     __tablename__ = "albums"
