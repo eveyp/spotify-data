@@ -16,6 +16,7 @@ pandas = "*"
 autopep8 = "*"
 pylint = "*"
 rope = "*"
+jupyter = "*"
 
 [requires]
 python_version = "3.9"
