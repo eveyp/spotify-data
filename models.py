@@ -29,7 +29,7 @@ class Album(Base):
     cover_url = Column(String)
     release_date = Column(String)
     type = Column(String)
-    label = Column(String)
+    label = Column(String, ForeignKey("labels.label"))
 
     artists = relationship('Artist', back_populates="albums")
     tracks = relationship('Track', back_populates="album")
