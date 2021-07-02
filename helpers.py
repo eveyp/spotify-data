@@ -51,7 +51,7 @@ def get_db_path(file):
     return db_path
 
 
-def get_db_session(settings_file=None, db_path=None):
+def get_db_session(settings_file=None, db_path=None, include_engine=False):
     if settings_file is None and db_path is None:
         raise ValueError("Must specify a settings file or database path.")
 
@@ -65,4 +65,7 @@ def get_db_session(settings_file=None, db_path=None):
     Session = sessionmaker(bind=engine)
     session = Session()
 
-    return session
+    if not include_engine:
+        return session
+    else:
+        return session, engine
